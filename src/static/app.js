@@ -3,6 +3,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const messageDiv = document.getElementById("message");
 
+  // Utility to escape HTML entities to prevent XSS
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"`=\/]/g, function (s) {
+      return ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;',
+        '`': '&#96;',
+        '=': '&#61;',
+        '/': '&#47;'
+      })[s];
+    });
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -17,6 +33,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
+        const safeName = escapeHTML(name);
+        const safeDescription = escapeHTML(details.description);
+        const safeSchedule = escapeHTML(details.schedule);
+
         const spotsLeft =
           details.max_participants - details.participants.length;
 
@@ -29,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${escapeHTML(email)}</span><button class="delete-btn" data-activity="${safeName}" data-email="${escapeHTML(email)}">❌</button></li>`
                   )
                   .join("")}
               </ul>
@@ -38,16 +58,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Add register student form directly to each card
         const registerForm = `
-          <form class="register-student-form" data-activity="${name}">
+          <form class="register-student-form" data-activity="${safeName}">
             <input type="email" class="register-email" placeholder="Student Email" required />
             <button type="submit">Register Student</button>
           </form>
         `;
 
         activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
+          <h4>${safeName}</h4>
+          <p>${safeDescription}</p>
+          <p><strong>Schedule:</strong> ${safeSchedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants-container">
             ${participantsHTML}
