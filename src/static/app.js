@@ -1,8 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
   const activitiesList = document.getElementById("activities-list");
   const activitySelect = document.getElementById("activity");
-  const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+
+  // Utility to escape HTML entities to prevent XSS
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"`=\/]/g, function (s) {
+      return ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;',
+        '`': '&#96;',
+        '=': '&#61;',
+        '/': '&#47;'
+      })[s];
+    });
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -18,6 +33,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
+        const safeName = escapeHTML(name);
+        const safeDescription = escapeHTML(details.description);
+        const safeSchedule = escapeHTML(details.schedule);
+
         const spotsLeft =
           details.max_participants - details.participants.length;
 
@@ -30,21 +49,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${escapeHTML(email)}</span><button class="delete-btn" data-activity="${safeName}" data-email="${escapeHTML(email)}">❌</button></li>`
                   )
                   .join("")}
               </ul>
             </div>`
             : `<p><em>No participants yet</em></p>`;
 
+        // Add register student form directly to each card
+        const registerForm = `
+          <form class="register-student-form" data-activity="${safeName}">
+            <input type="email" class="register-email" placeholder="Student Email" required />
+            <button type="submit">Register Student</button>
+          </form>
+        `;
+
         activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
+          <h4>${safeName}</h4>
+          <p>${safeDescription}</p>
+          <p><strong>Schedule:</strong> ${safeSchedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants-container">
             ${participantsHTML}
           </div>
+          ${registerForm}
         `;
 
         activitiesList.appendChild(activityCard);
@@ -59,6 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Add event listeners to delete buttons
       document.querySelectorAll(".delete-btn").forEach((button) => {
         button.addEventListener("click", handleUnregister);
+      });
+      // Add event listeners to register forms
+      document.querySelectorAll(".register-student-form").forEach((form) => {
+        form.addEventListener("submit", handleRegisterStudent);
       });
     } catch (error) {
       activitiesList.innerHTML =
@@ -110,40 +142,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Handle form submission
-  signupForm.addEventListener("submit", async (event) => {
+  // Add new handler for register student
+  async function handleRegisterStudent(event) {
     event.preventDefault();
-
-    const email = document.getElementById("email").value;
-    const activity = document.getElementById("activity").value;
-
+    const form = event.target;
+    const emailInput = form.querySelector(".register-email");
+    const email = emailInput.value;
+    const activity = form.getAttribute("data-activity");
+    if (!email) return;
     try {
       const response = await fetch(
-        `/activities/${encodeURIComponent(
-          activity
-        )}/signup?email=${encodeURIComponent(email)}`,
+        `/activities/${encodeURIComponent(activity)}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
         }
       );
-
       const result = await response.json();
-
       if (response.ok) {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
-        signupForm.reset();
-
-        // Refresh activities list to show updated participants
+        emailInput.value = "";
         fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
       }
-
       messageDiv.classList.remove("hidden");
-
-      // Hide message after 5 seconds
       setTimeout(() => {
         messageDiv.classList.add("hidden");
       }, 5000);
@@ -153,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
     }
-  });
+  }
 
   // Initialize app
   fetchActivities();
