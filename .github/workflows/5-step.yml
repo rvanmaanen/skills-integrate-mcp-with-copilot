@@ -1,0 +1,77 @@
+name: Step 5
+
+on:
+  push:
+    paths:
+      - "src/app.py"
+      - ".vscode/mcp.json"
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+env:
+  REVIEW_FILE: ".github/steps/x-review.md"
+
+jobs:
+  find_exercise:
+    name: Find Exercise Issue
+    uses: skills/exercise-toolkit/.github/workflows/find-exercise-issue.yml@v0.3.0
+
+  check_step_work:
+    name: Check Step 5 Work
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate step 5 instructions
+        run: |
+          if ! grep -q '/mcp' .vscode/mcp.json; then
+            echo "mcp.json must include the /mcp endpoint."
+            exit 1
+          fi
+
+      - name: Step 5 finished
+        run: echo "Step 5 complete!"
+
+  post_review_content:
+    name: Post review content
+    needs: [find_exercise, check_step_work]
+    runs-on: ubuntu-latest
+    if: |
+      !github.event.repository.is_template
+    env:
+      ISSUE_URL: ${{ needs.find_exercise.outputs.issue-url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create comment - add review content
+        run: |
+          gh issue comment "$ISSUE_URL" \
+            --body-file ${{ env.STEP_5_FILE }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  finish_exercise:
+    name: Finish Exercise
+    needs: [find_exercise, post_review_content]
+    uses: skills/exercise-toolkit/.github/workflows/finish-exercise.yml@v0.3.0
+    with:
+      issue-url: ${{ needs.find_exercise.outputs.issue-url }}
+
+  disable_workflow:
+    name: Disable this workflow
+    needs: [find_exercise, post_review_content]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Disable current workflow
+        run: gh workflow disable "${{github.workflow}}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
