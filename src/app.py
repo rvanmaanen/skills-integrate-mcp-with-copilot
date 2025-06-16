@@ -24,8 +24,15 @@ ACTIVITIES_FILE = os.path.join(Path(__file__).parent, "activities.json")
 
 
 def load_activities():
-    with open(ACTIVITIES_FILE, "r") as f:
-        return json.load(f)
+    try:
+        with open(ACTIVITIES_FILE, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: {ACTIVITIES_FILE} not found. Initializing with an empty activities dictionary.")
+        return {}
+    except json.JSONDecodeError:
+        print(f"Warning: {ACTIVITIES_FILE} contains malformed JSON. Initializing with an empty activities dictionary.")
+        return {}
 
 
 def save_activities(activities):
