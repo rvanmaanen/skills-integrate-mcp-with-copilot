@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import json
 from fastapi_mcp import FastApiMCP
+from typing import List
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -21,25 +22,19 @@ current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
 
-mcp = FastApiMCP(
-    app,
-    name="Mergington MCP API",
-    description="MCP server for Mergington High School Activities API"
-)
-mcp.mount()
-
 ACTIVITIES_FILE = os.path.join(Path(__file__).parent, "activities.json")
-
 
 def load_activities():
     try:
         with open(ACTIVITIES_FILE, "r") as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"Warning: {ACTIVITIES_FILE} not found. Initializing with an empty activities dictionary.")
+        print(
+            f"Warning: {ACTIVITIES_FILE} not found. Initializing with an empty activities dictionary.")
         return {}
     except json.JSONDecodeError:
-        print(f"Warning: {ACTIVITIES_FILE} contains malformed JSON. Initializing with an empty activities dictionary.")
+        print(
+            f"Warning: {ACTIVITIES_FILE} contains malformed JSON. Initializing with an empty activities dictionary.")
         return {}
 
 
@@ -68,7 +63,8 @@ def signup_for_activity(activity_name: str, email: str):
         raise HTTPException(status_code=404, detail="Activity not found")
     activity = activities[activity_name]
     if email in activity["participants"]:
-        raise HTTPException(status_code=400, detail="Student is already signed up")
+        raise HTTPException(
+            status_code=400, detail="Student is already signed up")
     activity["participants"].append(email)
     save_activities(activities)
     return {"message": f"Signed up {email} for {activity_name}"}
@@ -81,7 +77,15 @@ def unregister_from_activity(activity_name: str, email: str):
         raise HTTPException(status_code=404, detail="Activity not found")
     activity = activities[activity_name]
     if email not in activity["participants"]:
-        raise HTTPException(status_code=400, detail="Student is not signed up for this activity")
+        raise HTTPException(
+            status_code=400, detail="Student is not signed up for this activity")
     activity["participants"].remove(email)
     save_activities(activities)
     return {"message": f"Unregistered {email} from {activity_name}"}
+
+mcp = FastApiMCP(
+    app,
+    name="Mergington MCP API",
+    description="MCP server for Mergington High School Activities API"
+)
+mcp.mount()

@@ -31,7 +31,8 @@
     "schedule": "See announcement for details",
     "max_participants": 50,
     "participants": [
-      "reinier@test.com"
+      "reinier@test.com",
+      "ellajans@test.com"
     ]
   }
 }
