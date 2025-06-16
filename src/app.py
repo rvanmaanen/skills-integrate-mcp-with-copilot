@@ -11,6 +11,7 @@ from fastapi.responses import RedirectResponse
 import os
 from pathlib import Path
 import json
+from fastapi_mcp import FastApiMCP
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -19,6 +20,13 @@ app = FastAPI(title="Mergington High School API",
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
+
+mcp = FastApiMCP(
+    app,
+    name="Mergington MCP API",
+    description="MCP server for Mergington High School Activities API"
+)
+mcp.mount()
 
 ACTIVITIES_FILE = os.path.join(Path(__file__).parent, "activities.json")
 

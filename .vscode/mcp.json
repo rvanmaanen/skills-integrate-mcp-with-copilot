@@ -3,6 +3,10 @@
     "github-remote": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/"
-    }
+    },
+    "fastapi": {
+      "type": "http",
+      "url": "https://congenial-palm-tree-4vx7pp555rc74vv-8000.app.github.dev/mcp"
+    }    
   }
 }
