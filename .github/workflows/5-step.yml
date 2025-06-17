@@ -29,13 +29,6 @@ jobs:
       ISSUE_URL: ${{ needs.find_exercise.outputs.issue-url }}
 
     steps:
-      - name: Get response templates
-        uses: actions/checkout@v4
-        with:
-          repository: skills/exercise-toolkit
-          path: exercise-toolkit
-          ref: v0.3.0
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -45,6 +38,13 @@ jobs:
             echo "mcp.json must include the an MCP server called mergington-mcp."
             exit 1
           fi
+
+      - name: Get response templates
+        uses: actions/checkout@v4
+        with:
+          repository: skills/exercise-toolkit
+          path: exercise-toolkit
+          ref: v0.3.0
 
       - name: Update comment - step finished - final review next
         run: |
